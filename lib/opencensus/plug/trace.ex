@@ -75,7 +75,7 @@ defmodule Opencensus.Plug.Trace do
 
       def init(opts), do: opts
 
-      def call(conn, opts) do
+      def call(conn, _opts) do
         conn = mod.load_ctx(conn)
 
         attributes = Opencensus.Plug.get_attributes(conn, __MODULE__, attributes)
