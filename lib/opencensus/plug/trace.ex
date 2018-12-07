@@ -69,16 +69,16 @@ defmodule Opencensus.Plug.Trace do
   defmacro __using__(opts) do
     attributes = Keyword.get(opts, :attributes, [])
 
-    quote bind_quoted: [mod: __MODULE__, attributes: attributes] do
+    quote do
       @behaviour Plug
-      @behaviour mod
+      @behaviour unquote(__MODULE__)
 
       def init(opts), do: opts
 
       def call(conn, _opts) do
-        conn = mod.load_ctx(conn)
+        conn = unquote(__MODULE__).load_ctx(conn)
 
-        attributes = Opencensus.Plug.get_attributes(conn, __MODULE__, attributes)
+        attributes = Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes))
 
         :ocp.with_child_span(span_name(conn), attributes)
 
@@ -93,12 +93,12 @@ defmodule Opencensus.Plug.Trace do
         end)
       end
 
-      defoverridable span_name: 1, span_status: 1
-
       def span_name(_conn), do: "plug"
 
       def span_status(conn),
         do: {:opencensus.http_status_to_trace_status(conn.status), ""}
+
+      defoverridable span_name: 1, span_status: 1
     end
   end
 
