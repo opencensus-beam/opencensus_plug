@@ -27,8 +27,9 @@ defmodule Opencensus.Plug.Trace do
   This module creates 2 callback modules, which allows you to configure your
   span and also provides a way to add custom attributes assigned to span.
 
-  - `c:span_name/1`
-  - `c:span_status/1`
+  - `c:span_name/1` - defaults to request path
+  - `c:span_status/1` - defaults to mapping of reponse code to OpenCensus span
+    value, see `:opencensus.http_status_to_trace_status/1`.
 
   And also you can use `attributes` argument in `use` which must be either list
   of attributes which are names of 1-argument functions in current module that
@@ -93,7 +94,7 @@ defmodule Opencensus.Plug.Trace do
         end)
       end
 
-      def span_name(_conn), do: "plug"
+      def span_name(conn), do: conn.request_path
 
       def span_status(conn),
         do: {:opencensus.http_status_to_trace_status(conn.status), ""}
