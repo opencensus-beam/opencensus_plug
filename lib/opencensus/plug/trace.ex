@@ -83,7 +83,16 @@ defmodule Opencensus.Plug.Trace do
 
         :ocp.with_child_span(span_name(conn), attributes)
 
-        Plug.Conn.register_before_send(conn, fn conn ->
+        encoded =
+          :ocp.current_span_ctx()
+          |> :oc_span_ctx_header.encode()
+          |> :erlang.iolist_to_binary()
+
+        Logger.metadata(tracespan: encoded)
+
+        conn
+        |> Plug.Conn.put_resp_header(header, encoded)
+        |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn)
 
           :ocp.set_status(status, msg)
@@ -111,14 +120,5 @@ defmodule Opencensus.Plug.Trace do
          ctx when ctx != :undefined <- :oc_span_ctx_header.decode(val) do
       :ocp.with_span_ctx(ctx)
     end
-
-    encoded =
-      :ocp.current_span_ctx()
-      |> :oc_span_ctx_header.encode()
-      |> :erlang.iolist_to_binary()
-
-    Logger.metadata(tracespan: encoded)
-
-    Plug.Conn.put_resp_header(conn, header, encoded)
   end
 end
