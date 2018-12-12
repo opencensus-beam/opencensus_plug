@@ -112,13 +112,19 @@ defmodule Opencensus.Plug.Trace do
       :ocp.with_span_ctx(ctx)
     end
 
-    encoded =
-      :ocp.current_span_ctx()
-      |> :oc_span_ctx_header.encode()
-      |> :erlang.iolist_to_binary()
+    case :ocp.current_span_ctx() do
+      :undefined ->
+        conn
 
-    Logger.metadata(tracespan: encoded)
+      ctx ->
+        encoded =
+          ctx
+          |> :oc_span_ctx_header.encode()
+          |> :erlang.iolist_to_binary()
 
-    Plug.Conn.put_resp_header(conn, header, encoded)
+        Logger.metadata(tracespan: encoded)
+
+        Plug.Conn.put_resp_header(conn, header, encoded)
+    end
   end
 end
