@@ -77,27 +77,22 @@ defmodule Opencensus.Plug.Trace do
       def init(opts), do: opts
 
       def call(conn, _opts) do
-        conn = unquote(__MODULE__).load_ctx(conn)
-
+        header = :oc_span_ctx_header.field_name()
+        :ok = unquote(__MODULE__).load_ctx(conn, header)
         attributes = Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes))
 
-        :ocp.with_child_span(span_name(conn), attributes)
+        _ = :ocp.with_child_span(span_name(conn), attributes)
+        ctx = :ocp.current_span_ctx()
 
-        encoded =
-          :ocp.current_span_ctx()
-          |> :oc_span_ctx_header.encode()
-          |> :erlang.iolist_to_binary()
-
-        Logger.metadata(tracespan: encoded)
+        :ok = unquote(__MODULE__).set_logger_metadata(ctx)
 
         conn
-        |> Plug.Conn.put_resp_header(String.downcase(header), encoded)
+        |> unquote(__MODULE__).put_ctx_resp_header(header, ctx)
         |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn)
 
-          :ocp.set_status(status, msg)
-
-          :ocp.finish_span()
+          :oc_trace.set_status(ctx, status, msg)
+          :oc_trace.finish_span(ctx)
 
           conn
         end)
@@ -112,13 +107,44 @@ defmodule Opencensus.Plug.Trace do
     end
   end
 
-  @doc false
-  def load_ctx(conn) do
-    header = :oc_span_ctx_header.field_name()
+  ## PRIVATE
 
+  require Record
+
+  Record.defrecordp(:ctx, Record.extract(:span_ctx, from_lib: "opencensus/include/opencensus.hrl"))
+
+  @doc false
+  def set_logger_metadata(span) do
+    trace_id = List.to_string(:io_lib.format("~32.16.0b", [ctx(span, :trace_id)]))
+    span_id = List.to_string(:io_lib.format("~16.16.0b", [ctx(span, :span_id)]))
+
+    Logger.metadata(
+      trace_id: trace_id,
+      span_id: span_id,
+      trace_options: ctx(span, :trace_options)
+    )
+
+    :ok
+  end
+
+  @doc false
+  def put_ctx_resp_header(conn, header, ctx) do
+    encoded =
+      ctx
+      |> :oc_span_ctx_header.encode()
+      |> List.to_string()
+
+    Plug.Conn.put_resp_header(conn, String.downcase(header), encoded)
+  end
+
+  @doc false
+  def load_ctx(conn, header) do
     with [val] <- Plug.Conn.get_req_header(conn, header),
          ctx when ctx != :undefined <- :oc_span_ctx_header.decode(val) do
+      require Logger
       :ocp.with_span_ctx(ctx)
     end
+
+    :ok
   end
 end
