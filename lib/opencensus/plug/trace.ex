@@ -91,7 +91,7 @@ defmodule Opencensus.Plug.Trace do
         Logger.metadata(tracespan: encoded)
 
         conn
-        |> Plug.Conn.put_resp_header(header, encoded)
+        |> Plug.Conn.put_resp_header(String.downcase(header), encoded)
         |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn)
 
