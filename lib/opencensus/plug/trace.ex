@@ -58,14 +58,14 @@ defmodule Opencensus.Plug.Trace do
   @doc """
   Return name for current span. By defaut returns `"plug"`
   """
-  @callback span_name(Plug.Conn.t()) :: String.t()
+  @callback span_name(Plug.Conn.t(), options :: term()) :: String.t()
 
   @doc """
   Return tuple containing span status and message. By default return value
   status assigned by [default mapping](https://opencensus.io/tracing/span/status/)
   and empty message.
   """
-  @callback span_status(Plug.Conn.t()) :: {integer(), String.t()}
+  @callback span_status(Plug.Conn.t(), options :: term()) :: {integer(), String.t()}
 
   defmacro __using__(opts) do
     attributes = Keyword.get(opts, :attributes, [])
@@ -76,12 +76,12 @@ defmodule Opencensus.Plug.Trace do
 
       def init(opts), do: opts
 
-      def call(conn, _opts) do
+      def call(conn, opts) do
         header = :oc_span_ctx_header.field_name()
         :ok = unquote(__MODULE__).load_ctx(conn, header)
         attributes = Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes))
 
-        _ = :ocp.with_child_span(span_name(conn), attributes)
+        _ = :ocp.with_child_span(span_name(conn, opts), attributes)
         ctx = :ocp.current_span_ctx()
 
         :ok = unquote(__MODULE__).set_logger_metadata(ctx)
@@ -89,7 +89,7 @@ defmodule Opencensus.Plug.Trace do
         conn
         |> unquote(__MODULE__).put_ctx_resp_header(header, ctx)
         |> Plug.Conn.register_before_send(fn conn ->
-          {status, msg} = span_status(conn)
+          {status, msg} = span_status(conn, opts)
 
           :oc_trace.set_status(ctx, status, msg)
           :oc_trace.finish_span(ctx)
@@ -98,12 +98,12 @@ defmodule Opencensus.Plug.Trace do
         end)
       end
 
-      def span_name(conn), do: conn.request_path
+      def span_name(conn, _opts), do: conn.request_path
 
-      def span_status(conn),
+      def span_status(conn, _opts),
         do: {:opencensus.http_status_to_trace_status(conn.status), ""}
 
-      defoverridable span_name: 1, span_status: 1
+      defoverridable span_name: 2, span_status: 2
     end
   end
 
