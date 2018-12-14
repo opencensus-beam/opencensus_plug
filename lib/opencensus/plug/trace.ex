@@ -111,7 +111,10 @@ defmodule Opencensus.Plug.Trace do
 
   require Record
 
-  Record.defrecordp(:ctx, Record.extract(:span_ctx, from_lib: "opencensus/include/opencensus.hrl"))
+  Record.defrecordp(
+    :ctx,
+    Record.extract(:span_ctx, from_lib: "opencensus/include/opencensus.hrl")
+  )
 
   @doc false
   def set_logger_metadata(span) do

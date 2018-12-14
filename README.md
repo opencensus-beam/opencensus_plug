@@ -1,5 +1,7 @@
 # Opencensus.Plug
 
+[![CircleCI](https://circleci.com/gh/opencensus-beam/plug.svg?style=svg)](https://circleci.com/gh/opencensus-beam/plug)
+
 **TODO: Add description**
 
 ## Installation
