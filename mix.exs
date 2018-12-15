@@ -12,7 +12,12 @@ defmodule Opencensus.Plug.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [coveralls: :test, "coveralls.html": :test, "coveralls.json": :test, docs: :docs],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test,
+        docs: :docs
+      ],
       description: @description,
       package: package()
     ]
