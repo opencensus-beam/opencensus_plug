@@ -28,9 +28,7 @@ defmodule Opencensus.Plug.TraceTest do
 
     setup do: [conn: conn(:get, "/")]
 
-    test "sets 'traceparent' response header", %{module: module, conn: conn} do
-      assert Code.compile_quoted(module)
-
+    test "sets 'traceparent' response header", %{conn: conn} do
       conn = SamplePlug.call(conn, [])
 
       assert [_] = get_resp_header(conn, "traceparent")
