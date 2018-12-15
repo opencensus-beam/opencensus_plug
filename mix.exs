@@ -53,7 +53,7 @@ defmodule Opencensus.Plug.MixProject do
 
       # Testing
       {:excoveralls, "~> 0.10.3", only: [:test]},
-      {:dialyxir, ">= 0.0.0", runtime: false},
+      {:dialyxir, ">= 0.0.0", runtime: false, only: [:test]},
       {:junit_formatter, ">= 0.0.0", only: [:test]}
     ]
   end
