@@ -5,7 +5,7 @@ defmodule Opencensus.Plug.MixProject do
     [
       app: :opencensus_plug,
       version: "0.1.0",
-      elixir: "~> 1.7",
+      elixir: "~> 1.5",
       elixirc_options: [warnings_as_errors: true],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -25,10 +25,10 @@ defmodule Opencensus.Plug.MixProject do
   defp deps do
     [
       {:plug, "~> 1.7"},
-      {:opencensus, "~> 0.6.0"},
+      {:opencensus, "~> 0.6.0 or ~> 0.7.0"},
 
       # Documentation
-      {:ex_doc, ">= 0.0.0", only: [:dev, :doc]},
+      {:ex_doc, ">= 0.0.0", only: [:doc]},
 
       # Testing
       {:excoveralls, "~> 0.10.3", only: [:test]},
