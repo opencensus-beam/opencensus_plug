@@ -2,6 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/opencensus-beam/opencensus_plug.svg?style=svg)](https://circleci.com/gh/opencensus-beam/opencensus_plug)
 [![CodeCov](https://codecov.io/gh/opencensus-beam/opencensus_plug/branch/master/graph/badge.svg)](https://codecov.io/gh/opencensus-beam/opencensus_plug)
+[![Inline docs](http://inch-ci.org/github/opencensus-beam/opencensus_plug.svg)](http://inch-ci.org/github/opencensus-beam/opencensus_plug)
 
 [Plug][plug] integration for [OpenCensus][oc]. It provides tracer and metrics
 integration.

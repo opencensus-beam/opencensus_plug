@@ -37,7 +37,6 @@ jobs:
       - checkout
       - fetch_deps:
           elixir_version: <<parameters.elixir_version>>
-
       - run: mkdir -p reports/exunit
       - run: mix coveralls.json
       - run: bash <(curl -s https://codecov.io/bash)
@@ -51,7 +50,6 @@ jobs:
     steps:
       - checkout
       - fetch_deps
-
       - restore_cache:
           keys:
             - dialyzer-v1-{{ checksum "mix.lock" }}
@@ -72,12 +70,23 @@ jobs:
       - fetch_deps
       - run: mix format --check-formatted
 
+  inchci:
+    docker:
+      # Elixir 1.6 as InchCI do not yet work with 1.7
+      - image: elixir:1.6
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - fetch_deps
+      - run: mix inch.report
+
 workflows:
   version: 2
   lints:
     jobs:
       - dialyzer
       - format
+      - inchci
   testing:
     jobs:
       - test:
