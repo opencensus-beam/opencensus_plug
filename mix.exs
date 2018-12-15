@@ -16,7 +16,9 @@ defmodule Opencensus.Plug.MixProject do
         coveralls: :test,
         "coveralls.html": :test,
         "coveralls.json": :test,
-        docs: :docs
+        docs: :docs,
+        "inchci.add": :docs,
+        "inch.report": :docs
       ],
       description: @description,
       package: package()
@@ -50,6 +52,7 @@ defmodule Opencensus.Plug.MixProject do
 
       # Documentation
       {:ex_doc, ">= 0.0.0", only: [:docs]},
+      {:inch_ex, "~> 1.0", only: [:docs]},
 
       # Testing
       {:excoveralls, "~> 0.10.3", only: [:test]},
