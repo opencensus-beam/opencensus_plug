@@ -1,15 +1,15 @@
 # Opencensus.Plug
 
-[![CircleCI](https://circleci.com/gh/opencensus-beam/plug.svg?style=svg)](https://circleci.com/gh/opencensus-beam/plug)
-[![CodeCov](https://img.shields.io/codecov/c/github/opencensus-beam/plug.svg)](https://codecov.io/gh/opencensus-beam/plug)
+[![CircleCI](https://circleci.com/gh/opencensus-beam/opencensus_plug.svg?style=svg)](https://circleci.com/gh/opencensus-beam/opencensus_plug)
+[![CodeCov](https://codecov.io/gh/opencensus-beam/opencensus_plug/branch/master/graph/badge.svg)](https://codecov.io/gh/opencensus-beam/opencensus_plug)
 
 [Plug][plug] integration for [OpenCensus][oc]. It provides tracer and metrics
 integration.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `opencensus_plug` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `opencensus_plug` to your list
+of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -19,9 +19,7 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/opencensus\_plug](https://hexdocs.pm/opencensus_plug).
+The docs can be found at [https://hexdocs.pm/opencensus\_plug](https://hexdocs.pm/opencensus_plug).
 
 ## Usage
 
