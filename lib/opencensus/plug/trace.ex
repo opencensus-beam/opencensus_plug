@@ -81,7 +81,7 @@ defmodule Opencensus.Plug.Trace do
         :ok = unquote(__MODULE__).load_ctx(conn, header)
         attributes = Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes))
 
-        _ = :ocp.with_child_span(span_name(conn, opts), attributes)
+        parent_ctx = :ocp.with_child_span(span_name(conn, opts), attributes)
         ctx = :ocp.current_span_ctx()
 
         :ok = unquote(__MODULE__).set_logger_metadata(ctx)
@@ -93,6 +93,7 @@ defmodule Opencensus.Plug.Trace do
 
           :oc_trace.set_status(ctx, status, msg)
           :oc_trace.finish_span(ctx)
+          :ocp.with_span_ctx(parent_ctx)
 
           conn
         end)

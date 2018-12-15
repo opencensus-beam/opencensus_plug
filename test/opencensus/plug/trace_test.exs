@@ -22,19 +22,42 @@ defmodule Opencensus.Plug.TraceTest do
   end
 
   describe "__using__/1" do
-    setup do
-      module =
-        quote do
-          defmodule SamplePlug do
-            use Subject
-          end
-        end
-
-      [module: module]
+    defmodule SamplePlug do
+      use Subject
     end
 
-    test "code compiles when using module", %{module: module} do
+    setup do: [conn: conn(:get, "/")]
+
+    test "sets 'traceparent' response header", %{module: module, conn: conn} do
       assert Code.compile_quoted(module)
+
+      conn = SamplePlug.call(conn, [])
+
+      assert [_] = get_resp_header(conn, "traceparent")
+    end
+
+    test "span longs as long as request", %{conn: conn} do
+      conn = SamplePlug.call(conn, [])
+      refute :undefined == :ocp.current_span_ctx()
+
+      _ = send_resp(conn, 200, "")
+      assert :undefined == :ocp.current_span_ctx()
+    end
+
+    test "after response the parent span continues", %{conn: conn} do
+      ctx = :oc_trace.start_span("span", :undefined, %{})
+      header =
+        ctx
+        |> :oc_span_ctx_header.encode()
+        |> List.to_string()
+
+      _ =
+        conn
+        |> put_req_header(:oc_span_ctx_header.field_name(), header)
+        |> SamplePlug.call([])
+        |> send_resp(200, "")
+
+      assert ctx == :ocp.current_span_ctx()
     end
   end
 
@@ -61,15 +84,15 @@ defmodule Opencensus.Plug.TraceTest do
     end
 
     test "sets response header", %{conn: conn, ctx: ctx} do
-      conn = Subject.put_ctx_resp_header(conn, "tracespan", ctx)
+      conn = Subject.put_ctx_resp_header(conn, "trace-header", ctx)
 
-      assert [_] = get_resp_header(conn, "tracespan")
+      assert [_] = get_resp_header(conn, "trace-header")
     end
 
     test "response header is always lowercased", %{conn: conn, ctx: ctx} do
-      conn = Subject.put_ctx_resp_header(conn, "TraceSpan", ctx)
+      conn = Subject.put_ctx_resp_header(conn, "Trace-Header", ctx)
 
-      assert [_] = get_resp_header(conn, "tracespan")
+      assert [_] = get_resp_header(conn, "trace-header")
     end
   end
 
@@ -79,23 +102,21 @@ defmodule Opencensus.Plug.TraceTest do
     test "sets current span context when header is present", %{conn: conn} do
       conn =
         conn
-        |> put_req_header("tracespan", @encoded)
+        |> put_req_header("trace-header", @encoded)
 
-      assert :ok = Subject.load_ctx(conn, "tracespan")
+      assert :ok = Subject.load_ctx(conn, "trace-header")
       assert :undefined != :ocp.current_span_ctx()
     end
 
     test "do not set context when header is empty", %{conn: conn} do
-      assert :ok = Subject.load_ctx(conn, "tracespan")
+      assert :ok = Subject.load_ctx(conn, "trace-header")
       assert :undefined = :ocp.current_span_ctx()
     end
 
     test "do not set context when header is invalid", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("tracespan", "foo-bar")
+      conn = put_req_header(conn, "trace-header", "foo-bar")
 
-      assert :ok = Subject.load_ctx(conn, "tracespan")
+      assert :ok = Subject.load_ctx(conn, "trace-header")
       assert :undefined = :ocp.current_span_ctx()
     end
   end
