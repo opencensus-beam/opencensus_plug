@@ -1,6 +1,8 @@
 defmodule Opencensus.Plug.MixProject do
   use Mix.Project
 
+  @description "Integration between OpenCensus and Plug"
+
   def project do
     [
       app: :opencensus_plug,
@@ -10,7 +12,9 @@ defmodule Opencensus.Plug.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [coveralls: :test, "coveralls.html": :test, "coveralls.json": :test]
+      preferred_cli_env: [coveralls: :test, "coveralls.html": :test, "coveralls.json": :test, docs: :docs],
+      description: @description,
+      package: package()
     ]
   end
 
@@ -21,6 +25,18 @@ defmodule Opencensus.Plug.MixProject do
     ]
   end
 
+  defp package do
+    [
+      licenses: ["Apache 2.0"],
+      links: %{
+        "GitHub" => "https://github.com/opencensus-beam/opencensus_plug",
+        "OpenCensus" => "https://opencensus.io",
+        "OpenCensus Erlang" => "https://github.com/census-instrumentation/opencensus-erlang",
+        "OpenCensus BEAM" => "https://github.com/opencensus-beam"
+      }
+    ]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
@@ -28,7 +44,7 @@ defmodule Opencensus.Plug.MixProject do
       {:opencensus, "~> 0.6.0 or ~> 0.7.0"},
 
       # Documentation
-      {:ex_doc, ">= 0.0.0", only: [:doc]},
+      {:ex_doc, ">= 0.0.0", only: [:docs]},
 
       # Testing
       {:excoveralls, "~> 0.10.3", only: [:test]},
