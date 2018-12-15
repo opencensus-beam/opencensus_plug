@@ -69,15 +69,16 @@ defmodule Opencensus.Plug.Metrics do
           stop = :erlang.monotonic_time()
           diff = stop - start
 
-          tags = Map.merge(
-            Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes)),
-            %{
-              method: conn.method,
-              host: conn.host,
-              scheme: conn.scheme,
-              status: conn.status
-            }
-          )
+          tags =
+            Map.merge(
+              Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes)),
+              %{
+                method: conn.method,
+                host: conn.host,
+                scheme: conn.scheme,
+                status: conn.status
+              }
+            )
 
           :ok =
             :oc_stat.record(

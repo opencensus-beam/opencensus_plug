@@ -46,6 +46,7 @@ defmodule Opencensus.Plug.TraceTest do
 
     test "after response the parent span continues", %{conn: conn} do
       ctx = :oc_trace.start_span("span", :undefined, %{})
+
       header =
         ctx
         |> :oc_span_ctx_header.encode()
