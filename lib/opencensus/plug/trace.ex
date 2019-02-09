@@ -91,7 +91,7 @@ defmodule Opencensus.Plug.Trace do
         |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn, opts)
 
-          :oc_trace.set_status(ctx, status, msg)
+          :oc_trace.set_status(status, msg, ctx)
           :oc_trace.finish_span(ctx)
           :ocp.with_span_ctx(parent_ctx)
 
