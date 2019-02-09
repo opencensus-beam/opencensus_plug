@@ -13,8 +13,9 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - deps-v1-<<parameters.elixir_version>>-{{ .Branch }}-{{ .Revision }}
-            - deps-v1-<<parameters.elixir_version>>-{{ .Branch }}-
+            - deps-v1-<<parameters.elixir_version>>-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - deps-v1-<<parameters.elixir_version>>-{{ checksum "mix.lock" }}-{{ .Branch }}-
+            - deps-v1-<<parameters.elixir_version>>-{{ checksum "mix.lock" }}-
             - deps-v1-<<parameters.elixir_version>>-
       - run: mix do local.hex --force, local.rebar --force
       - run: mix do deps.get, deps.compile
