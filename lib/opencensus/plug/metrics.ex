@@ -7,8 +7,8 @@ defmodule Opencensus.Plug.Metrics do
   1. Create your own `Plug` module:
 
     ```elixir
-    defmodule MyApp.TracingPlug do
-      use Opencensus.Plug.Trace
+    defmodule MyApp.MetricsPlug do
+      use Opencensus.Plug.Metrics
     end
     ```
 
@@ -18,7 +18,7 @@ defmodule Opencensus.Plug.Metrics do
     defmodule MyAppWeb.Endpoint do
       use Phoenix.Endpoint, otp_app: :my_app
 
-      plug MyApp.TracingPlug
+      plug MyApp.MetricsPlug
     end
     ```
 
