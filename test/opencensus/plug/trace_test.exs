@@ -44,7 +44,8 @@ defmodule Opencensus.Plug.TraceTest do
         end
 
       _ =
-        List.foldl(headers, conn, fn {k, v}, acc -> Plug.Conn.put_req_header(acc, k, v) end)
+        headers
+        |> Enum.reduce(conn, fn {k, v}, acc -> Plug.Conn.put_req_header(acc, k, v) end)
         |> SamplePlug.call([])
         |> send_resp(200, "")
 
