@@ -77,23 +77,24 @@ defmodule Opencensus.Plug.Trace do
       def init(opts), do: opts
 
       def call(conn, opts) do
-        header = :oc_span_ctx_header.field_name()
-        :ok = unquote(__MODULE__).load_ctx(conn, header)
+        parent_span_ctx = :oc_propagation_http_tracecontext.from_headers(conn.req_headers)
+        :ocp.with_span_ctx(parent_span_ctx)
+
         attributes = Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes))
 
-        parent_ctx = :ocp.with_child_span(span_name(conn, opts), attributes)
-        ctx = :ocp.current_span_ctx()
+        :ocp.with_child_span(span_name(conn, opts), attributes)
+        span_ctx = :ocp.current_span_ctx()
 
-        :ok = unquote(__MODULE__).set_logger_metadata(ctx)
+        :ok = unquote(__MODULE__).set_logger_metadata(span_ctx)
 
         conn
-        |> unquote(__MODULE__).put_ctx_resp_header(header, ctx)
+        |> unquote(__MODULE__).put_ctx_resp_header(span_ctx)
         |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn, opts)
 
-          :oc_trace.set_status(status, msg, ctx)
-          :oc_trace.finish_span(ctx)
-          :ocp.with_span_ctx(parent_ctx)
+          :oc_trace.set_status(status, msg, span_ctx)
+          :oc_trace.finish_span(span_ctx)
+          :ocp.with_span_ctx(parent_span_ctx)
 
           conn
         end)
@@ -132,23 +133,12 @@ defmodule Opencensus.Plug.Trace do
   end
 
   @doc false
-  def put_ctx_resp_header(conn, header, ctx) do
-    encoded =
-      ctx
-      |> :oc_span_ctx_header.encode()
-      |> List.to_string()
+  def put_ctx_resp_header(conn, span_ctx) do
+    headers =
+      for {k, v} <- :oc_propagation_http_tracecontext.to_headers(span_ctx) do
+        {k, List.to_string(v)}
+      end
 
-    Plug.Conn.put_resp_header(conn, String.downcase(header), encoded)
-  end
-
-  @doc false
-  def load_ctx(conn, header) do
-    with [val] <- Plug.Conn.get_req_header(conn, header),
-         ctx when ctx != :undefined <- :oc_span_ctx_header.decode(val) do
-      require Logger
-      :ocp.with_span_ctx(ctx)
-    end
-
-    :ok
+    Plug.Conn.prepend_resp_headers(conn, headers)
   end
 end

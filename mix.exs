@@ -48,7 +48,7 @@ defmodule Opencensus.Plug.MixProject do
   defp deps do
     [
       {:plug, "~> 1.7"},
-      {:opencensus, ">= 0.6.0 and <= 0.8.0"},
+      {:opencensus, "~> 0.9"},
 
       # Documentation
       {:ex_doc, ">= 0.0.0", only: [:docs]},
