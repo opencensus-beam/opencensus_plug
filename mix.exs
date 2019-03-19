@@ -47,7 +47,7 @@ defmodule Opencensus.Plug.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:plug, "~> 1.7"},
+      {:plug, "~> 1.6"},
       {:opencensus, "~> 0.9"},
 
       # Documentation
