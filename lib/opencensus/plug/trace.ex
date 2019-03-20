@@ -80,17 +80,36 @@ defmodule Opencensus.Plug.Trace do
         parent_span_ctx = :oc_propagation_http_tracecontext.from_headers(conn.req_headers)
         :ocp.with_span_ctx(parent_span_ctx)
 
+        user_agent =
+          conn
+          |> Plug.Conn.get_req_header("user-agent")
+          |> List.first()
+
+        default_attributes = %{
+          "http.host" => conn.host,
+          "http.method" => conn.method,
+          "http.path" => conn.request_path,
+          "http.user_agent" => user_agent,
+          "http.url" => Plug.Conn.request_url(conn)
+
+          # TODO: How do we get this?
+          # "http.route" => ""
+        }
+
         attributes = Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes))
 
-        :ocp.with_child_span(span_name(conn, opts), attributes)
+        :ocp.with_child_span(span_name(conn, opts), Map.merge(default_attributes, attributes))
         span_ctx = :ocp.current_span_ctx()
 
         :ok = unquote(__MODULE__).set_logger_metadata(span_ctx)
 
         conn
+        |> Plug.Conn.put_private(:opencensus_span_ctx, span_ctx)
         |> unquote(__MODULE__).put_ctx_resp_header(span_ctx)
         |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn, opts)
+
+          :oc_trace.put_attribute("http.status_code", Integer.to_string(conn.status), span_ctx)
 
           :oc_trace.set_status(status, msg, span_ctx)
           :oc_trace.finish_span(span_ctx)
