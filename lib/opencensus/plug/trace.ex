@@ -104,6 +104,7 @@ defmodule Opencensus.Plug.Trace do
         :ok = unquote(__MODULE__).set_logger_metadata(span_ctx)
 
         conn
+        |> Plug.Conn.put_private(:opencensus_span_ctx, span_ctx)
         |> unquote(__MODULE__).put_ctx_resp_header(span_ctx)
         |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn, opts)
