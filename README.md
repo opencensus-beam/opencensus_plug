@@ -15,7 +15,7 @@ of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:opencensus_plug, "~> 0.2"}
+    {:opencensus_plug, "~> 0.3"}
   ]
 end
 ```
