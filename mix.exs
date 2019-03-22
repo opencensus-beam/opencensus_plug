@@ -6,7 +6,7 @@ defmodule Opencensus.Plug.MixProject do
   def project do
     [
       app: :opencensus_plug,
-      version: "0.2.0",
+      version: "0.3.0",
       elixir: "~> 1.5",
       elixirc_options: [warnings_as_errors: true],
       start_permanent: Mix.env() == :prod,
