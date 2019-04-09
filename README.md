@@ -65,7 +65,7 @@ plug MyApp.MetricsPlug
 
 You also need to define metrics that will be measured, fortunately there is
 helper method for you, just call `MyApp.MetricsPlug.setup_metrics()` **before**
-running pipeline.
+running pipeline. This could go in `Application.start` (or `MyApp.start` in Phoenix), as one example.
 
 Available metrics:
 
