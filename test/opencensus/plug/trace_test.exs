@@ -19,12 +19,22 @@ defmodule Opencensus.Plug.TraceTest do
       use Subject
     end
 
+    defmodule SamplePlugB3 do
+      use Subject, propagation_format: :b3
+    end
+
     setup do: [conn: conn(:get, "/")]
 
     test "sets 'traceparent' response header", %{conn: conn} do
       conn = SamplePlug.call(conn, [])
 
       assert [_] = get_resp_header(conn, "traceparent")
+    end
+
+    test "sets 'x-b3-traceid' response header", %{conn: conn} do
+      conn = SamplePlugB3.call(conn, [])
+
+      assert [_] = get_resp_header(conn, "x-b3-traceid")
     end
 
     test "span longs as long as request", %{conn: conn} do
@@ -75,10 +85,16 @@ defmodule Opencensus.Plug.TraceTest do
       [conn: conn(:get, "/"), ctx: :ocp.current_span_ctx()]
     end
 
-    test "sets response header", %{conn: conn, ctx: ctx} do
-      conn = Subject.put_ctx_resp_header(conn, ctx)
+    test "sets response header in trace context propagation format", %{conn: conn, ctx: ctx} do
+      conn = Subject.put_ctx_resp_header(conn, ctx, :tracecontext)
 
       assert [_] = get_resp_header(conn, "traceparent")
+    end
+
+    test "sets response header", %{conn: conn, ctx: ctx} do
+      conn = Subject.put_ctx_resp_header(conn, ctx, :b3)
+
+      assert [_] = get_resp_header(conn, "x-b3-traceid")
     end
   end
 end

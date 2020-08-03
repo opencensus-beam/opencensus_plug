@@ -47,6 +47,15 @@ create new span. By default span name will match request path, you can configure
 that by defining `span_name/2` method that will receive `Plug.Conn.t` as a first
 argument and plug options as a second.
 
+If using [B3](https://github.com/openzipkin/b3-propagation), add `propagation_format`
+argument to your plug:
+
+```elixir
+defmodule MyApp.TracePlug do
+  use Opencensus.Plug.Trace, propagation_format: :b3
+end
+```
+
 ### Metrics
 
 Create metrics module:
