@@ -40,12 +40,16 @@ defmodule Opencensus.Plug.Trace do
   - `{module, function, args}` - which will prepend `conn` to the given arguments
     and call `apply(module, function, [conn | args])`
 
+  Finally, you can configure what propagation format to use for tracing by setting
+  a `propagation_format` argument in `use` that specifies if you are using `:b3` or
+  `:tracecontext`. If none is given it defaults to `tracecontext`.
+
 
   Example:
 
   ```elixir
   defmodule MyAppWeb.TraceWithCustomAttribute do
-    use Opencensus.Plug.Trace, attributes: [:method]
+    use Opencensus.Plug.Trace, attributes: [:method], propagation_format: :b3
 
     def method(conn), do: conn.method
   end
@@ -69,6 +73,7 @@ defmodule Opencensus.Plug.Trace do
 
   defmacro __using__(opts) do
     attributes = Keyword.get(opts, :attributes, [])
+    propagation_format = Keyword.get(opts, :propagation_format, :tracecontext)
 
     quote do
       @behaviour Plug
@@ -77,7 +82,12 @@ defmodule Opencensus.Plug.Trace do
       def init(opts), do: opts
 
       def call(conn, opts) do
-        parent_span_ctx = :oc_propagation_http_tracecontext.from_headers(conn.req_headers)
+        parent_span_ctx =
+          case unquote(propagation_format) do
+            :tracecontext -> :oc_propagation_http_tracecontext.from_headers(conn.req_headers)
+            :b3 -> :oc_propagation_http_b3.from_headers(conn.req_headers)
+          end
+
         :ocp.with_span_ctx(parent_span_ctx)
 
         user_agent =
@@ -105,7 +115,7 @@ defmodule Opencensus.Plug.Trace do
 
         conn
         |> Plug.Conn.put_private(:opencensus_span_ctx, span_ctx)
-        |> unquote(__MODULE__).put_ctx_resp_header(span_ctx)
+        |> unquote(__MODULE__).put_ctx_resp_header(span_ctx, unquote(propagation_format))
         |> Plug.Conn.register_before_send(fn conn ->
           {status, msg} = span_status(conn, opts)
 
@@ -139,7 +149,7 @@ defmodule Opencensus.Plug.Trace do
 
   @doc false
   def set_logger_metadata(span) do
-    trace_id = List.to_string(:io_lib.format("~32.16.0b", [ctx(span, :trace_id)]))
+    trace_id = List.to_string(:io_lib.format("~.16b", [ctx(span, :trace_id)]))
     span_id = List.to_string(:io_lib.format("~16.16.0b", [ctx(span, :span_id)]))
 
     Logger.metadata(
@@ -152,10 +162,22 @@ defmodule Opencensus.Plug.Trace do
   end
 
   @doc false
-  def put_ctx_resp_header(conn, span_ctx) do
+  def put_ctx_resp_header(conn, span_ctx, :tracecontext) do
     headers =
       for {k, v} <- :oc_propagation_http_tracecontext.to_headers(span_ctx) do
-        {k, List.to_string(v)}
+        {String.downcase(k), List.to_string(v)}
+      end
+
+    Plug.Conn.prepend_resp_headers(conn, headers)
+  end
+
+  def put_ctx_resp_header(conn, span_ctx, :b3) do
+    headers =
+      for {k, v} <- :oc_propagation_http_b3.to_headers(span_ctx) do
+        cond do
+          is_list(v) -> {String.downcase(k), List.to_string(v)}
+          true -> {String.downcase(k), v}
+        end
       end
 
     Plug.Conn.prepend_resp_headers(conn, headers)
