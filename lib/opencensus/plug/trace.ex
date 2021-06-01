@@ -77,46 +77,10 @@ defmodule Opencensus.Plug.Trace do
       def init(opts), do: opts
 
       def call(conn, opts) do
-        parent_span_ctx = :oc_propagation_http_tracecontext.from_headers(conn.req_headers)
-        :ocp.with_span_ctx(parent_span_ctx)
-
-        user_agent =
-          conn
-          |> Plug.Conn.get_req_header("user-agent")
-          |> List.first()
-
-        default_attributes = %{
-          "http.host" => conn.host,
-          "http.method" => conn.method,
-          "http.path" => conn.request_path,
-          "http.user_agent" => user_agent,
-          "http.url" => Plug.Conn.request_url(conn)
-
-          # TODO: How do we get this?
-          # "http.route" => ""
-        }
-
-        attributes = Opencensus.Plug.get_tags(conn, __MODULE__, unquote(attributes))
-
-        :ocp.with_child_span(span_name(conn, opts), Map.merge(default_attributes, attributes))
-        span_ctx = :ocp.current_span_ctx()
-
-        :ok = unquote(__MODULE__).set_logger_metadata(span_ctx)
-
-        conn
-        |> Plug.Conn.put_private(:opencensus_span_ctx, span_ctx)
-        |> unquote(__MODULE__).put_ctx_resp_header(span_ctx)
-        |> Plug.Conn.register_before_send(fn conn ->
-          {status, msg} = span_status(conn, opts)
-
-          :oc_trace.put_attribute("http.status_code", Integer.to_string(conn.status), span_ctx)
-
-          :oc_trace.set_status(status, msg, span_ctx)
-          :oc_trace.finish_span(span_ctx)
-          :ocp.with_span_ctx(parent_span_ctx)
-
-          conn
-        end)
+        apply(
+          &unquote(__MODULE__).call_with_module_and_attributes/4,
+          [conn, opts, __MODULE__, unquote(attributes)]
+        )
       end
 
       def span_name(conn, _opts), do: conn.request_path
@@ -136,6 +100,55 @@ defmodule Opencensus.Plug.Trace do
     :ctx,
     Record.extract(:span_ctx, from_lib: "opencensus/include/opencensus.hrl")
   )
+
+  @doc false
+  def call_with_module_and_attributes(conn, opts, module, attributes) do
+    parent_span_ctx = :oc_propagation_http_tracecontext.from_headers(conn.req_headers)
+    _ = :ocp.with_span_ctx(parent_span_ctx)
+
+    user_agent =
+      conn
+      |> Plug.Conn.get_req_header("user-agent")
+      |> List.first()
+
+    default_attributes = %{
+      "http.host" => conn.host,
+      "http.method" => conn.method,
+      "http.path" => conn.request_path,
+      "http.user_agent" => user_agent,
+      "http.url" => Plug.Conn.request_url(conn)
+
+      # TODO: How do we get this?
+      # "http.route" => ""
+    }
+
+    attributes = Opencensus.Plug.get_tags(conn, module, attributes)
+
+    _ =
+      :ocp.with_child_span(
+        apply(&module.span_name/2, [conn, opts]),
+        Map.merge(default_attributes, attributes)
+      )
+
+    span_ctx = :ocp.current_span_ctx()
+
+    :ok = __MODULE__.set_logger_metadata(span_ctx)
+
+    conn
+    |> Plug.Conn.put_private(:opencensus_span_ctx, span_ctx)
+    |> __MODULE__.put_ctx_resp_header(span_ctx)
+    |> Plug.Conn.register_before_send(fn conn ->
+      {status, msg} = apply(&module.span_status/2, [conn, opts])
+
+      :oc_trace.put_attribute("http.status_code", Integer.to_string(conn.status), span_ctx)
+
+      :oc_trace.set_status(status, msg, span_ctx)
+      :oc_trace.finish_span(span_ctx)
+      _ = :ocp.with_span_ctx(parent_span_ctx)
+
+      conn
+    end)
+  end
 
   @doc false
   def set_logger_metadata(span) do

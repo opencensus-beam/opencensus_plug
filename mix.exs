@@ -12,6 +12,7 @@ defmodule Opencensus.Plug.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
+      dialyzer: [flags: ["-Wunmatched_returns", :error_handling, :race_conditions, :underspecs]],
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.html": :test,
